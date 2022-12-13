@@ -7,6 +7,7 @@ use App\Models\ClientContact;
 use App\Models\ClientSearchRecord;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -268,10 +269,12 @@ class ClientController extends Controller
 
                     $search_keyword = $request->search_keyword;
 
-                    $keywords_data = [];
+                    $record_data = [];
+                    $client_data = [];
 
                     $keywords = ClientSearchRecord::select('keyword')
                         ->where('keyword', 'like', "%{$search_keyword}%")
+                        ->distinct()
                         ->take(10)
                         ->orderBy('keyword', 'asc')
                         ->orderBy('popularity_count', 'desc')
@@ -279,27 +282,29 @@ class ClientController extends Controller
 
                     if ($keywords->count()) {
                         foreach ($keywords as $keyword) {
-                            $keywords_data[] = $keyword->keyword;
+                            $record_data[] = $keyword->keyword;
                         }
-                    }else{
-                        $clients = Client::select('name')
-                        ->where(function(Builder $builder) use ($search_keyword){
+                    }
+
+                    $clients = Client::select('name')
+                        ->where(function (Builder $builder) use ($search_keyword) {
                             return $builder->where('name', 'like', "%{$search_keyword}%")
-                            ->orWhereHas('clientContacts', function(Builder $builder) use ($search_keyword){
-                                return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
-                            });
+                                ->orWhereHas('clientContacts', function (Builder $builder) use ($search_keyword) {
+                                    return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
+                                });
                         })
                         ->orderBy('popularity_count', 'desc')
                         ->orderBy('name', 'asc')
                         ->take(10)
                         ->get();
 
-                        if ($clients->count()) {
-                            foreach ($clients as $client) {
-                                $keywords_data[] = $client->name;
-                            }
+                    if ($clients->count()) {
+                        foreach ($clients as $client) {
+                            $client_data[] = $client->name;
                         }
                     }
+
+                    $keywords_data = array_unique(array_merge($record_data, $client_data));
 
                     return response()->json([
                         'status' => true,
@@ -335,26 +340,33 @@ class ClientController extends Controller
 
             $search_keyword = $request->search_data;
 
-            $clients = Client::where(function(Builder $builder) use ($search_keyword){
-                return $builder->where('name', 'like', "%{$search_keyword}%")
-                ->orWhereHas('clientContacts', function(Builder $builder) use ($search_keyword){
-                    return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
+            $clients = Cache::get($search_keyword);
+            
+            if (empty($clients)) {
+                $clients = Cache::remember($search_keyword, 300, function () use ($search_keyword) {
+                    return Client::where(function (Builder $builder) use ($search_keyword) {
+                        return $builder->where('name', 'like', "%{$search_keyword}%")
+                            ->orWhereHas('clientContacts', function (Builder $builder) use ($search_keyword) {
+                                return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
+                            });
+                    })
+                        ->orderBy('popularity_count', 'desc')
+                        ->orderBy('name', 'asc')->paginate(config('setting.pagination_number'));
                 });
-            })
-            ->orderBy('popularity_count', 'desc')
-            ->orderBy('name', 'asc')->paginate(config('setting.pagination_number'));
+            }
 
-            if($clients->count()){
-                foreach($clients as $client){
-                    DB::transaction(function() use ($search_keyword, $client){
+            if ($clients->count()) {
+                foreach ($clients as $client) {
+                    DB::transaction(function () use ($search_keyword, $client) {
                         $clientSearchRecord = ClientSearchRecord::where([
                             ['keyword', '=', $search_keyword],
                             ['client_id', '=', $client->id],
                         ])->first();
 
-                        if($clientSearchRecord){
+                        if ($clientSearchRecord) {
                             $clientSearchRecord->increment('popularity_count', 1);
-                        }else{
+                        } else {
+
                             ClientSearchRecord::create([
                                 'keyword' => $search_keyword,
                                 'client_id' => $client->id,
@@ -364,7 +376,7 @@ class ClientController extends Controller
                         $client->increment('popularity_count', 1);
                     });
                 }
-            }            
+            }
 
             return response()->json([
                 'status' => true,
@@ -373,7 +385,6 @@ class ClientController extends Controller
                     'clients' => $clients
                 ])->render(),
             ]);
-
         } else {
             return response()->json([
                 'status' => false,

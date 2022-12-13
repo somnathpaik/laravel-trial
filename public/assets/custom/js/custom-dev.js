@@ -78,9 +78,7 @@ $(document).on("click", ".delete-client", function (e) {
                     'X-CSRF-TOKEN': $("meta[name='csrf-token']").attr("content"),
                 },
                 success: function (response) {
-                    if (response.status === true) {
-                        
-                        $('#userid-' + uuid).remove();
+                    if (response.status === true) {                        
                         fetchTableData(route, 1);
                         checkTableData();
                         toastr.success(response.message);
@@ -139,7 +137,7 @@ $(document).ready(function () {
                         response(data.data);
                     } else {
                         toastr.error(data.message);
-                        return false;
+                        //return false;
                     }
 
                 }
