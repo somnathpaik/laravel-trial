@@ -5,7 +5,6 @@
             <th>Email</th>
             <th>Mobile</th>
             <th>Status</th>
-            <th>Popularity Count</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -16,7 +15,6 @@
             <td>{{ $client->clientContact->email }}</td>
             <td>{{ $client->clientContact->mobile }}</td>
             <td>{{ $client->is_active_text }}</td>
-            <td>{{ $client->popularity_count }}</td>
             <td>
                 <a href="javascript:void(0);" class="open-modal" title="Edit" data-route="{{ route('client.edit', $client->uuid) }}">Edit</a> |
                 <a href="javascript:void(0);" class="delete-client" title="Delete" data-uuid="{{ $client->uuid }}" data-route="{{ route('client.destroy', $client->uuid) }}">Delete</a>

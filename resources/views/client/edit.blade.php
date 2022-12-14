@@ -7,11 +7,15 @@
         </div>
         <div class="form-group">
             <label for="email">Email *</label>
-            <input type="email" class="form-control" id="email" placeholder="Ex: somnathpaik@gmail.com" name="email" value="{{ old('email', $client->clientContact->email) }}">
+            <input type="email" class="form-control" id="email" placeholder="Ex: somnathpaik@gmail.com" name="email" value="{{ old('email', $client->clientContact->email) }}" readonly>
         </div>
         <div class="form-group">
             <label for="mobile">Mobile *</label>
-            <input type="tel" class="form-control" id="mobile" placeholder="+919876543210" name="mobile" value="{{ old('mobile', $client->clientContact->mobile) }}">
+            <input type="tel" class="form-control" id="mobile" placeholder="+919876543210" name="mobile" value="{{ old('mobile', $client->clientContact->mobile) }}" readonly>
+        </div>
+        <div class="form-group">
+            <label for="popularity-count">Popularity Count</label>
+            <div>{{ $client->popularity_count }}</div>
         </div>
         <div class="form-check">
             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" @if(old('is_active', $client->is_active) == 1) checked @endif >

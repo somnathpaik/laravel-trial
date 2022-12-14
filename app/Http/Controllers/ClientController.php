@@ -99,10 +99,10 @@ class ClientController extends Controller
                     'mobile' => $request->mobile
                 ]);
             });
-
+            Cache::flush();
             return response()->json([
                 'status' => true,
-                'message' => 'Data save successful',
+                'message' => 'Data saved successfully',
                 'data' => view('client.last-data', [
                     'client' => $this->client
                 ])->render(),
@@ -176,8 +176,6 @@ class ClientController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
-            'email' => 'required|email|unique:client_contacts,email,' . $client->clientContact->id . '|max:50|regex:/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix',
-            'mobile' => 'required|unique:client_contacts,mobile,' . $client->clientContact->id . '|max:15|regex:/^\+(?:[0-9] ?){6,14}[0-9]$/',
         ]);
 
         if ($validator->fails()) {
@@ -191,28 +189,19 @@ class ClientController extends Controller
         }
         try {
 
-            DB::transaction(function () use ($request, $client) {
-                $client->update([
-                    'name' => $request->name,
-                    'is_active' => $request->is_active ?? 2
-                ]);
-
-                $client->clientContact()->update([
-                    'email' => $request->email,
-                    'mobile' => $request->mobile
-                ]);
-
-                $this->client = $client;
-            });
-
+            $client->update([
+                'name' => $request->name,
+                'is_active' => $request->is_active ?? 2
+            ]);
+            Cache::flush();
             return response()->json([
                 'status' => true,
-                'message' => 'Data save successful',
+                'message' => 'Data saved successfully',
                 'data' => view('client.last-data', [
-                    'client' => $this->client
+                    'client' => $client
                 ])->render(),
                 'is_replace' => true,
-                'uuid' => $this->client->uuid,
+                'uuid' => $client->uuid,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -276,7 +265,7 @@ class ClientController extends Controller
                         ->where('keyword', 'like', "%{$search_keyword}%")
                         ->distinct()
                         ->take(10)
-                        ->orderBy('keyword', 'asc')
+                        ->orderBy('updated_at', 'desc')
                         ->orderBy('popularity_count', 'desc')
                         ->get();
 
@@ -293,7 +282,7 @@ class ClientController extends Controller
                                     return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
                                 });
                         })
-                        ->orderBy('popularity_count', 'desc')
+                        ->orderBy('updated_at', 'desc')
                         ->orderBy('name', 'asc')
                         ->take(10)
                         ->get();
@@ -380,7 +369,7 @@ class ClientController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Data save successful',
+                'message' => 'Data saved successfully',
                 'data' => view('client.index', [
                     'clients' => $clients
                 ])->render(),
