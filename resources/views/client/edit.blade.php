@@ -14,16 +14,27 @@
             <input type="tel" class="form-control" id="mobile" placeholder="+919876543210" name="mobile" value="{{ old('mobile', $client->clientContact->mobile) }}" readonly>
         </div>
         <div class="form-group">
-            <label for="popularity-count">Popularity Count</label>
-            <div>{{ $client->popularity_count }}</div>
+        <label for="status">Status</label><br>
+        <div class="selector">
+            <div class="selecotr-item">
+                <input type="radio" id="radio1" name="is_active" value="1" class="selector-item_radio active_radio" @if(old('is_active', $client->is_active) == 1) checked @endif>
+                <label for="radio1" class="selector-item_label">Active</label>
+            </div>
+            <div class="selecotr-item">
+                <input type="radio" id="radio2" name="is_active" value="2" class="selector-item_radio inactive_radio" @if(old('is_active', $client->is_active) == 2) checked @endif>
+                <label for="radio2" class="selector-item_label">Inactivate</label>
+            </div>
+        </div>        
         </div>
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" @if(old('is_active', $client->is_active) == 1) checked @endif >
-            <label class="form-check-label" for="is_active">Approved ?</label>
-        </div>
+
     </div>
     <!-- /.card-body -->
     <div class="card-footer">
         <button type="submit" class="btn btn-primary">Save</button>
     </div>
 </form>
+<script>
+    $("input[data-bootstrap-switch]").each(function() {
+        $(this).bootstrapSwitch('state', $(this).prop('checked'));
+    })
+</script>

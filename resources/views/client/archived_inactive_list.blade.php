@@ -26,9 +26,6 @@
                         </a> |
                         <a href="javascript:void(0);" class="prompt text-danger" title="Delete" data-method="DELETE" data-prompt-text="Are you sure to delete this ?" data-uuid="{{ $client->uuid }}" data-route="{{ route('client.destroy', $client->uuid) }}">
                             <i class="fas fa-trash-alt"></i>
-                        </a> |
-                        <a href="javascript:void(0);" class="prompt text-info" title="archived" data-method="GET" data-prompt-text="Are you sure to archived this ?" data-uuid="{{ $client->uuid }}" data-route="{{ route('client.archived', $client->uuid) }}">
-                            <i class="fas fa-archive"></i>
                         </a>
                     </div>
                 </div>

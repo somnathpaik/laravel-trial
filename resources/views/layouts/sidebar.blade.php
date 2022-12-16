@@ -1,19 +1,10 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
-    <a href="{{ route('dashboard') }}" class="brand-link">
-        <img src="{{ asset('assets/dist/img/AdminLTELogo.png') }}" alt="Laravel Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-        <span class="brand-text font-weight-light">Laravel</span>
-    </a>
-
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Sidebar user panel (optional) -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-            <div class="image">
-                <img src="{{ asset('assets/dist/img/user2-160x160.jpg') }}" class="img-circle elevation-2" alt="User Image">
-            </div>
             <div class="info">
-                <a href="#" class="d-block">{{ auth()->user()->name }}</a>
+                <a href="#" class="d-block">&nbsp;</a>
             </div>
         </div>
 
@@ -23,11 +14,35 @@
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
-                <li class="nav-item menu-open">
-                    <a href="{{ route('dashboard') }}" class="nav-link active">
+                <li class="nav-item">
+                    <a href="{{ route('dashboard') }}" id="dashboard" class="nav-link page active" data-route="{{ route('client.index') }}">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>
                             Dashboard
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0);" id="search-history" class="nav-link page" data-route="{{ route('client.search-history') }}">
+                        <i class="nav-icon fas fa-search"></i>
+                        <p>
+                            Search History
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0);" id="archived-list" class="nav-link page" data-route="{{ route('client.archived-list') }}">
+                        <i class="nav-icon fas fa-archive"></i>
+                        <p>
+                            Archived List
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0);" id="inactive-list" class="nav-link page" data-route="{{ route('client.inactive-list') }}">
+                        <i class="nav-icon fas fa-times-circle"></i>
+                        <p>
+                            Inactive List
                         </p>
                     </a>
                 </li>
@@ -35,6 +50,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <a href="{{ route('logout') }}" class="nav-link" onclick="event.preventDefault(); this.closest('form').submit();">
+                            <i class="nav-icon fas fa-sign-out-alt"></i>
                             <p>
                                 Logout
                             </p>

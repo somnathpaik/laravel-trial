@@ -11,10 +11,14 @@ class Client extends Model
 {
     use HasFactory;
 
+    public CONST IS_ACTIVATED_YES = 1;
+    public CONST IS_ACTIVATED_NO = 2;
+
     protected $fillable = [
         'uuid',
         'name',
         'is_active',
+        'is_archived',
         'popularity_count',
     ];
 
@@ -23,7 +27,7 @@ class Client extends Model
     ];
 
     public function getIsActiveTextAttribute(): string{
-        return $this->is_active == 1 ? 'Approved' : 'Not approved';
+        return $this->is_active == self::IS_ACTIVATED_YES ? 'Active' : 'In Active';
     }
 
     public function clientContacts() :HasMany{

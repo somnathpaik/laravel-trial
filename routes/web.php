@@ -30,6 +30,11 @@ Route::prefix('client')->name('client.')->middleware(['auth'])->group(function()
     Route::delete('/destroy/{uuid}', [ClientController::class, 'destroy'])->name('destroy');
     Route::get('/search', [ClientController::class, 'search'])->name('search');
     Route::get('/search-data', [ClientController::class, 'searchData'])->name('search-data');
+    Route::get('/archived/{uuid}', [ClientController::class, 'archived'])->name('archived');
+    Route::get('/search-history', [ClientController::class, 'searchHistory'])->name('search-history');
+    Route::get('/archived-list', [ClientController::class, 'archivedList'])->name('archived-list');
+    Route::get('/inactive-list', [ClientController::class, 'inactiveList'])->name('inactive-list');
+    Route::get('/recent-search', [ClientController::class, 'recentSearch'])->name('recent-search');
 });
 
 require __DIR__.'/auth.php';

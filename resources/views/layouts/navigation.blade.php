@@ -16,8 +16,13 @@
     <ul class="navbar-nav ml-auto">
         <!-- Navbar Search -->        
         <li class="nav-item">
+            {{--
+            <div class="image">
+                <img src="{{ asset('assets/dist/img/user2-160x160.jpg') }}" class="img-circle elevation-2" alt="User Image">
+            </div>
+            --}}            
             <a class="nav-link" data-widget="fullscreen" href="#" role="button">
-                <i class="fas fa-expand-arrows-alt"></i>
+                {{ auth()->user()->name }}
             </a>
         </li>
     </ul>

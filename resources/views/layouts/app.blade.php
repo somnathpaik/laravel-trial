@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="{{ asset('assets/plugins/toastr/toastr.min.css') }}">
     <!-- Theme style -->
     <link rel="stylesheet" href="{{ asset('assets/dist/css/adminlte.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/css/custom-dev.css') }}">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -46,6 +47,7 @@
     <!-- daterangepicker -->
     <script src="{{ asset('assets/plugins/moment/moment.min.js') }}"></script>
     <!-- AdminLTE App -->
+    <script src="{{ asset('assets/plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/toastr/toastr.min.js') }}"></script>
     <script src="{{ asset('assets/dist/js/adminlte.js') }}"></script>

@@ -24,13 +24,25 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $clients = Client::with('clientContact')->latest()->paginate(config('setting.pagination_number'));
+            $clients = Client::with('clientContact')
+                ->where([
+                    ['is_active', '=', Client::IS_ACTIVATED_YES],
+                    ['is_archived', '=', false]
+                ])
+                ->latest()
+                ->paginate(config('setting.pagination_number'));
+
+            $data = [
+                'page_title' => 'Dashboard',
+                'page_data' => view('client.index', [
+                    'clients' => $clients
+                ])->render()
+            ];
+
             return response()->json([
                 'status' => true,
-                'message' => 'Data save successful',
-                'data' => view('client.index', [
-                    'clients' => $clients
-                ])->render(),
+                'message' => '',
+                'data' => $data,
             ]);
         } else {
             return response()->json([
@@ -119,17 +131,6 @@ class ClientController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
      * Show the form for editing the specified resource.
      *
      * @param  string  $uuid
@@ -169,7 +170,6 @@ class ClientController extends Controller
                 'status' => false,
                 'message' => ['Data is not valid'],
                 'data' => '',
-                'is_replace' => true,
                 'uuid' => ''
             ]);
         }
@@ -183,7 +183,6 @@ class ClientController extends Controller
                 'status' => false,
                 'message' => $validator->errors()->all(),
                 'data' => '',
-                'is_replace' => true,
                 'uuid' => ''
             ]);
         }
@@ -194,13 +193,13 @@ class ClientController extends Controller
                 'is_active' => $request->is_active ?? 2
             ]);
             Cache::flush();
+            
             return response()->json([
                 'status' => true,
                 'message' => 'Data saved successfully',
                 'data' => view('client.last-data', [
                     'client' => $client
                 ])->render(),
-                'is_replace' => true,
                 'uuid' => $client->uuid,
             ]);
         } catch (\Exception $e) {
@@ -208,7 +207,6 @@ class ClientController extends Controller
                 'status' => false,
                 'message' => [$e->getMessage()],
                 'data' => '',
-                'is_replace' => true,
                 'uuid' => ''
             ]);
         }
@@ -249,6 +247,37 @@ class ClientController extends Controller
         }
     }
 
+    public function archived(string $uuid)
+    {
+        $client = Client::where('uuid', $uuid)->first();
+
+        if (!$client) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data is not valid',
+                'data' => '',
+            ]);
+        }
+
+        try {
+            $client->update([
+                'is_archived' => 1
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data archived successful',
+                'data' => '',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'data' => '',
+            ]);
+        }
+    }
+
     public function search(Request $request)
     {
         if ($request->ajax()) {
@@ -261,7 +290,10 @@ class ClientController extends Controller
                     $record_data = [];
                     $client_data = [];
 
-                    $keywords = ClientSearchRecord::select('keyword')
+                    $keywords = ClientSearchRecord::whereHas('client', function (Builder $builder) {
+                        return $builder->where('is_active', Client::IS_ACTIVATED_YES);
+                    })
+                        ->select('keyword')
                         ->where('keyword', 'like', "%{$search_keyword}%")
                         ->distinct()
                         ->take(10)
@@ -276,6 +308,7 @@ class ClientController extends Controller
                     }
 
                     $clients = Client::select('name')
+                        ->where('is_active', Client::IS_ACTIVATED_YES)
                         ->where(function (Builder $builder) use ($search_keyword) {
                             return $builder->where('name', 'like', "%{$search_keyword}%")
                                 ->orWhereHas('clientContacts', function (Builder $builder) use ($search_keyword) {
@@ -294,11 +327,12 @@ class ClientController extends Controller
                     }
 
                     $keywords_data = array_unique(array_merge($record_data, $client_data));
-
                     return response()->json([
                         'status' => true,
                         'message' => '',
-                        'data' => $keywords_data,
+                        'data' => view('client.recent_search', [
+                            'search_records' => $keywords_data
+                        ])->render(),
                     ]);
                 } else {
                     return response()->json([
@@ -330,15 +364,19 @@ class ClientController extends Controller
             $search_keyword = $request->search_data;
 
             $clients = Cache::get($search_keyword);
-            
+
             if (empty($clients)) {
                 $clients = Cache::remember($search_keyword, 300, function () use ($search_keyword) {
-                    return Client::where(function (Builder $builder) use ($search_keyword) {
-                        return $builder->where('name', 'like', "%{$search_keyword}%")
-                            ->orWhereHas('clientContacts', function (Builder $builder) use ($search_keyword) {
-                                return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
-                            });
-                    })
+                    return Client::where([
+                        ['is_active', '=', Client::IS_ACTIVATED_YES],
+                        ['is_archived', '=', false]
+                    ])
+                        ->where(function (Builder $builder) use ($search_keyword) {
+                            return $builder->where('name', 'like', "%{$search_keyword}%")
+                                ->orWhereHas('clientContacts', function (Builder $builder) use ($search_keyword) {
+                                    return $builder->where('email', 'like', "%{$search_keyword}%")->orWhere('mobile', 'like', "%{$search_keyword}%");
+                                });
+                        })
                         ->orderBy('popularity_count', 'desc')
                         ->orderBy('name', 'asc')->paginate(config('setting.pagination_number'));
                 });
@@ -374,6 +412,132 @@ class ClientController extends Controller
                     'clients' => $clients
                 ])->render(),
             ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something wrong',
+                'data' => '',
+            ]);
+        }
+    }
+
+    public function searchHistory(Request $request)
+    {
+        if ($request->ajax()) {
+
+            $search_records = ClientSearchRecord::with('client')
+                ->orderBy('popularity_count', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->paginate(config('setting.pagination_number'));
+            
+            $page_file = 'client.search_history';
+            if($request->load_more){
+                $page_file = 'client.history_load_more_data';
+            }
+
+            $data = [
+                'page_title' => 'Search History',
+                'page_data' => view($page_file, [
+                    'search_records' => $search_records
+                ])->render()
+            ];
+
+            return response()->json([
+                'status' => true,
+                'message' => '',
+                'data' => $data,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something wrong',
+                'data' => '',
+            ]);
+        }
+    }
+
+    public function archivedList(Request $request)
+    {
+        if ($request->ajax()) {
+            $clients = Client::with('clientContact')
+                ->where('is_archived', true)
+                ->latest()
+                ->paginate(config('setting.pagination_number'));
+            
+            $data = [
+                'page_title' => 'Archived list',
+                'page_data' => view('client.archived_inactive_list', [
+                    'clients' => $clients
+                ])->render()
+            ];
+
+            return response()->json([
+                'status' => true,
+                'message' => '',
+                'data' => $data,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something wrong',
+                'data' => '',
+            ]);
+        }
+    }
+
+    public function inactiveList(Request $request)
+    {
+        if ($request->ajax()) {
+            $clients = Client::with('clientContact')
+                ->where('is_active', Client::IS_ACTIVATED_NO)
+                ->latest()
+                ->paginate(config('setting.pagination_number'));
+            
+            $data = [
+                'page_title' => 'Inactive list',
+                'page_data' => view('client.archived_inactive_list', [
+                    'clients' => $clients
+                ])->render()
+            ];
+
+            return response()->json([
+                'status' => true,
+                'message' => '',
+                'data' => $data,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something wrong',
+                'data' => '',
+            ]);
+        }
+    }
+
+    public function recentSearch(Request $request)
+    {
+        if ($request->ajax()) {
+
+            $search_records = ClientSearchRecord::select('keyword')->whereHas('client', function(Builder $builder){
+                return $builder->where([
+                    ['is_active', '=', Client::IS_ACTIVATED_YES],
+                    ['is_archived', '=', false]
+                ]);
+            })
+            ->orderBy('updated_at', 'desc')
+            ->distinct()
+            ->limit(5)
+            ->pluck('keyword')
+            ->toArray();
+            
+            return response()->json([
+                'status' => true,
+                'message' => '',
+                'data' => view('client.recent_search', [
+                    'search_records' => $search_records
+                ])->render(),
+            ]);
+
         } else {
             return response()->json([
                 'status' => false,
